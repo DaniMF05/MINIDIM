@@ -1,0 +1,91 @@
+# Jerarquía de departamentos
+dn: ou=dicc,dc=fis,dc=epn,dc=ec
+objectClass: organizationalUnit
+ou: dicc
+
+dn: ou=sic,dc=fis,dc=epn,dc=ec
+objectClass: organizationalUnit
+ou: sic
+
+dn: ou=ic,dc=fis,dc=epn,dc=ec
+objectClass: organizationalUnit
+ou: ic
+
+# Sub-unidades
+dn: ou=Empleados,ou=dicc,dc=fis,dc=epn,dc=ec
+objectClass: organizationalUnit
+ou: Empleados
+
+dn: ou=Profesores,ou=dicc,dc=fis,dc=epn,dc=ec
+objectClass: organizationalUnit
+ou: Profesores
+
+dn: ou=sem1,ou=sic,dc=fis,dc=epn,dc=ec
+objectClass: organizationalUnit
+ou: sem1
+
+# Unidad Organizativa para Grupos y Definición del Grupo 7000
+dn: ou=Groups,dc=fis,dc=epn,dc=ec
+objectClass: organizationalUnit
+ou: Groups
+
+dn: cn=fis-users,ou=Groups,dc=fis,dc=epn,dc=ec
+objectClass: posixGroup
+cn: fis-users
+gidNumber: 7000
+description: Grupo general de usuarios de la FIS
+
+# Usuarios Enlazados al Grupo
+dn: uid=emafla,ou=Profesores,ou=dicc,dc=fis,dc=epn,dc=ec
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: emafla
+userPassword: {SASL}emafla@FIS.EPN.EC
+sn: Mafla
+homePhone: 1234559
+roomNumber: 212
+givenName: Enrique
+cn: Enrique Mafla
+displayName: emafla
+uidNumber: 20001
+gidNumber: 7000
+mail: enrique.mafla@epn.edu.ec
+loginShell: /bin/bash
+homeDirectory: /home/emafla
+
+dn: uid=jrueda,ou=sem1,ou=sic,dc=fis,dc=epn,dc=ec
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: jrueda
+userPassword: {SASL}jrueda@FIS.EPN.EC
+sn: Rueda
+homePhone: 5555555
+roomNumber: 443
+givenName: Jhoann Rueda
+cn: Jhoann Rueda
+displayName: jrueda
+uidNumber: 20002
+gidNumber: 7000
+mail: jrueda@epn.edu.ec
+loginShell: /bin/bash
+homeDirectory: /home/jrueda
+
+dn: uid=scollahuazo,ou=sem1,ou=sic,dc=fis,dc=epn,dc=ec
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: scollahuazo
+userPassword: {SASL}scollahuazo@FIS.EPN.EC
+sn: Santiago
+homePhone: 77777777
+roomNumber: 443
+givenName: Santiago
+cn: Santiago Collahuazo
+displayName: scollahuazo
+uidNumber: 20003
+gidNumber: 7000
+mail: santiago.collahuazo@epn.edu.ec
+loginShell: /bin/bash
+homeDirectory: /home/scollahuazo

@@ -1,0 +1,12 @@
+# Certificados y Llaves Privadas
+certs/
+
+# Datos persistentes de bases de datos
+kerberos/data/
+kerberos/data-master/
+ldap/config/master/
+ldap/config/replica/
+ldap/data/
+
+# Archivos basura de Windows WSL
+*:Zone.Identifier

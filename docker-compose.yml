@@ -1,0 +1,171 @@
+services:
+  ca-init:
+    build: 
+      context: ./ca
+    container_name: generador-certificados
+    volumes:
+      - ./certs:/certs
+  kdc-master:
+      build: ./kerberos
+      container_name: kdc1.fis.epn.ec
+      hostname: kdc1.fis.epn.ec
+      environment:
+        - KRB5_REALM=FIS.EPN.EC
+        - KADMIN_PASSWORD=adminpas
+        - KDC_ROLE=master
+      volumes:
+        - shared-keytabs:/shared-keytabs
+        - ./kerberos/data-master:/var/lib/krb5kdc
+      networks:
+        - red-fis
+      ports:
+        - "88:88"
+        - "749:749"
+
+  kdc-replica:
+    build: ./kerberos
+    container_name: kdc2.fis.epn.ec
+    hostname: kdc2.fis.epn.ec
+    environment:
+      - KRB5_REALM=FIS.EPN.EC
+      - KADMIN_PASSWORD=adminpas
+      - KDC_ROLE=replica
+    volumes:
+      - shared-keytabs:/shared-keytabs # Crucial: para que lea el kdc2.keytab
+    networks:
+      - red-fis
+    ports:
+      - "888:88"
+    depends_on:
+      kdc-master:
+        condition: service_started
+
+  ldap-master:
+    build: ./ldap
+    container_name: ldap1.fis.epn.ec
+    hostname: ldap1.fis.epn.ec
+    environment:
+      - LDAP_ROLE=master
+      - LDAP_DOMAIN=fis.epn.ec
+      - LDAP_BASE_DN=dc=fis,dc=epn,dc=ec
+      - LDAP_ADMIN_PASSWORD=adminpas
+    volumes:
+      - ./certs:/certs
+      - ./ldap/data/master:/var/lib/ldap
+      - ./ldap/config/master:/etc/ldap/slapd.d
+      - shared-keytabs:/shared-keytabs  # Recibe el keytab de Kerberos
+    networks:
+      - red-fis
+    ports:
+      - "3891:389"
+      - "6361:636"
+    depends_on:
+      ca-init:
+        condition: service_completed_successfully
+      kdc-master:
+        condition: service_started  # Espera a que el KDC esté arriba para que genere el keytab
+
+  ldap-replica:
+    build: ./ldap
+    container_name: ldap2.fis.epn.ec
+    hostname: ldap2.fis.epn.ec
+    environment:
+      - LDAP_ROLE=replica
+      - LDAP_DOMAIN=fis.epn.ec
+      - LDAP_BASE_DN=dc=fis,dc=epn,dc=ec
+      - LDAP_ADMIN_PASSWORD=adminpas
+    volumes:
+      - ./certs:/certs
+      - ./ldap/data/replica:/var/lib/ldap
+      - ./ldap/config/replica:/etc/ldap/slapd.d
+    networks:
+      - red-fis
+    depends_on:
+      - ldap-master
+
+  balanceador:
+      image: haproxy:2.8-alpine
+      container_name: balanceador.fis.epn.ec
+      ports:
+        - "389:389"   # Acceso externo para LDAP
+        - "636:636"   # Acceso externo para LDAPS
+        - "8404:8404" # Panel de estadísticas de HAProxy
+      volumes:
+        - ./balanceador/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      networks:
+        - red-fis
+      depends_on:
+        - ldap-master
+        - ldap-replica
+
+  web-server:
+    build: ./web
+    container_name: web.fis.epn.ec
+    hostname: web.fis.epn.ec
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/certs
+      - shared-keytabs:/shared-keytabs
+      - ./web/index.html:/var/www/html/index.html:ro
+    networks:
+      - red-fis
+    depends_on:
+      ca-init:
+        condition: service_completed_successfully
+      kdc-master:
+        condition: service_started
+
+# --- COMPONENTE DE MONITOREO ---
+
+  prometheus:
+    image: prom/prometheus:v2.54.0
+    container_name: prometheus.fis.epn.ec
+    volumes:
+      - ./monitoreo/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - red-fis
+
+  grafana:
+    image: grafana/grafana-oss:11.1.0
+    container_name: grafana.fis.epn.ec
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoreo/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Contraseña para tu defensa
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - red-fis
+    depends_on:
+      - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: node-exporter.fis.epn.ec
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - red-fis
+      
+volumes:
+  shared-keytabs:  # Volumen temporal para el intercambio de archivos keytab
+
+networks:
+  red-fis:
+    driver: bridge
