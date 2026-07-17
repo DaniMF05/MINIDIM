@@ -76,9 +76,6 @@ mkdir -p /etc/ssl/private
 cp /certs/web/web.crt /etc/ssl/certs/web.crt 2>/dev/null || true
 cp /certs/web/web.key /etc/ssl/private/web.key 2>/dev/null || true
 cp /certs/ca/ca.crt /etc/ssl/certs/ca.crt 2>/dev/null || true
-
-# --- Solución al error de DefaultRuntimeDir ---
-# Asegurar que existan los directorios de ejecución y logs de Apache
 mkdir -p /var/run/apache2 /var/lock/apache2 /var/log/apache2
 
 # Cargar variables de entorno oficiales de Apache para Ubuntu

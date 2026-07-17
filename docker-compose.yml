@@ -140,7 +140,7 @@ services:
     volumes:
       - ./monitoreo/grafana/provisioning:/etc/grafana/provisioning:ro
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin # Contraseña para tu defensa
+      - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_USERS_ALLOW_SIGN_UP=false
     networks:
       - red-fis
@@ -164,7 +164,7 @@ services:
       - red-fis
       
 volumes:
-  shared-keytabs:  # Volumen temporal para el intercambio de archivos keytab
+  shared-keytabs: 
 
 networks:
   red-fis:
